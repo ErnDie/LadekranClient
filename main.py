@@ -40,7 +40,7 @@ async def main_async():
     deviceHandler.add_service(webcamService)
 
     # Message Service
-    messageServiceProducer = MessageService__Producer("messageP")
+    messageServiceProducer = MessageService__Producer("message")
     deviceHandler.add_service(messageServiceProducer)
 
     # File Service
