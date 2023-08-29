@@ -43,15 +43,7 @@ async def main_async():
     messageServiceProducer = MessageService__Producer("messageP")
     deviceHandler.add_service(messageServiceProducer)
 
-    messageServiceConsumer = MessageService__Consumer("messageC")
-
-    async def onMessage(message: MessageServiceEvent):
-        print("Received Message of type", message["message_type"])
-        print("Message content:", message["message"])
-
-    messageServiceConsumer.on("message", onMessage)
-    deviceHandler.add_service(messageServiceConsumer)
-
+    # File Service
     fileServiceConsumer = FileService__Consumer("file")
 
     async def onFile(file: FileServiceEvent):
