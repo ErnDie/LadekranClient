@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
 import json
+import os
+from datetime import datetime
 
 from crosslab.soa_services.file import FileService__Consumer, FileServiceEvent, FileService__Producer
 from crosslab.soa_services.webcam import WebcamService__Producer, GstTrack
@@ -50,9 +52,21 @@ async def main_async():
         print("Received File of type", file["file_type"])
         print("File content:", file["content"])
         try:
-            ser.write(file["content"])
-            print("File content sent to Arduino")
-            await messageServiceProducer.sendMessage("File was uploaded to Arduino", "info")
+            try:
+                os.mkdir(f"{os.getcwd()}/tmp")
+            except:
+                print("Tmp directory already exists!")
+
+            with open(os.path.join(f"{os.getcwd()}/tmp", "tmp.ino"), "wb") as file:
+                file.write(file["content"])
+
+            start = datetime.now()
+            os.system(f"cd {os.getcwd()}")
+            os.system("arduino-cli compile --fqbn arduino:avr:uno tmp")
+            os.system("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno tmp")
+            end = datetime.now()
+            print("File uploaded!")
+            await messageServiceProducer.sendMessage(f"{end - start}", "info")
         except Exception as e:
             print("Error sending data:", e)
 
