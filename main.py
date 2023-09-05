@@ -15,6 +15,7 @@ from crosslab.api_client import APIClient
 from crosslab.soa_client.device_handler import DeviceHandler
 from crosslab.soa_services.message import MessageService__Producer, MessageService__Consumer
 
+
 async def main_async():
     # read config from file
     with open("config.json", "r") as configfile:
@@ -56,6 +57,7 @@ async def main_async():
         if process.returncode != 0:
             print(f"Error running command: {command}")
             print(f"Command stderr: {stderr.decode().strip()}")
+
     async def onFile(file: FileServiceEvent):
         print("Received File of type", file["file_type"])
         print("File content:", file["content"])
@@ -65,8 +67,9 @@ async def main_async():
             except:
                 print("Tmp directory already exists!")
 
+            file_data = file["content"]
             with open(os.path.join(f"{os.getcwd()}/tmp", "tmp.ino"), "wb") as file:
-                file.write(file["content"])
+                file.write(file_data)
 
             start = datetime.now()
             # Run the Arduino CLI commands asynchronously
