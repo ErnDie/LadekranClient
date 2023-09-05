@@ -2,22 +2,18 @@
 
 import json
 import os
+import subprocess
 from datetime import datetime
 
 from crosslab.soa_services.file import FileService__Consumer, FileServiceEvent, FileService__Producer
 from crosslab.soa_services.webcam import WebcamService__Producer, GstTrack
 
-import arduino_connection
 import asyncio
 import serial
 
 from crosslab.api_client import APIClient
 from crosslab.soa_client.device_handler import DeviceHandler
-from crosslab.soa_services.message import MessageServiceEvent
 from crosslab.soa_services.message import MessageService__Producer, MessageService__Consumer
-
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
-
 
 async def main_async():
     # read config from file
@@ -48,6 +44,18 @@ async def main_async():
     # File Service
     fileServiceConsumer = FileService__Consumer("file")
 
+    async def run_command(command):
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        stdout, stderr = await process.communicate()
+
+        if process.returncode != 0:
+            print(f"Error running command: {command}")
+            print(f"Command stderr: {stderr.decode().strip()}")
     async def onFile(file: FileServiceEvent):
         print("Received File of type", file["file_type"])
         print("File content:", file["content"])
@@ -61,9 +69,9 @@ async def main_async():
                 file.write(file["content"])
 
             start = datetime.now()
-            os.system(f"cd {os.getcwd()}")
-            os.system("arduino-cli compile --fqbn arduino:avr:uno tmp")
-            os.system("arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno tmp")
+            # Run the Arduino CLI commands asynchronously
+            await run_command(f"cd {os.getcwd()} && arduino-cli compile --fqbn arduino:avr:uno tmp")
+            await run_command(f"arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno tmp")
             end = datetime.now()
             print("File uploaded!")
             await messageServiceProducer.sendMessage(f"{end - start}", "info")
